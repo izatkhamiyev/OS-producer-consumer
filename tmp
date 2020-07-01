@@ -1,0 +1,48 @@
+
+typedef struct node_t {
+	int sock;
+	uint64_t time;
+	Node_time* prev = NULL;
+	Node_time* next = NULL;
+} Node_time;
+
+
+void QUEUE_push(Node_time** head, Node_time ** tail, int sock){
+	Node_time* node = malloc(sizeof(Node_time));
+	node->time = 5; 
+	node->sock = sock;
+	if(*head == NULL){
+		*head = node;
+		*tail = node;
+	}else{
+		(*head)->prev = node;
+		node->next = (*head);
+		*head = node;
+	}
+}
+
+void QUEUE_pop(Node_time** head, Node_time ** tail){
+	if(*head == NULL)
+		return;
+	if(*head == *tail){
+		Node_time* tmp = *head;
+		*head = NULL;
+		free(tmp);
+		return;
+	}
+	Node_time* tmp = *tail;
+	(*tail)->prev->next = NULL;
+	*tail = (*tail)->prev;
+	free(tmp);
+}
+
+void reject_DDOS(Node_time** head, Node_time ** tail){
+	while(*tail != NULL && (*tail)->time < 3){
+		int sock = (*tail)->sock;
+		if(FD_ISSET(sock, &afds)){
+			FD_CLR(sock, &afds);
+			close_socket(sock, UNKNOWN);
+		}
+		QUEUE_pop(head, tail);
+	}
+}
